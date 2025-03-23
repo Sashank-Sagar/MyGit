@@ -44,7 +44,7 @@ class MyGit():
         except OSError as e:
             raise OSError(f"Error: Could not read file {filename} {e}")
             
-    def write_file(self,path, content, mode='w'): # function to write content to a file
+    def write_file(self, path, content, mode='w'): # function to write content to a file
         try:
             os.makedirs(os.path.dirname(path), exist_ok= True) # Creates the directory if it does not exist
             with open(path, mode) as f:
@@ -52,7 +52,7 @@ class MyGit():
         except OSError as e:
             raise Exception(f"Error: Could not write to file {path} {e}")
 
-    def read_file(self,path, mode= 'r'): # function to read content from a file
+    def read_file(self, path, mode= 'r'): # function to read content from a file
         try:
             if not os.path.isfile(path):
                 raise FileNotFoundError(f"Error: File {path} does not exist or is not a file")
@@ -77,8 +77,9 @@ class MyGit():
                 if ":" in line:  # Ensure the line follows the expected format
                     parts = line.split(":",1)
                     if len(parts) == 2:
-                        filename, file_hash = parts
-                        index_data[filename] = file_hash.strip()
+                        filename, file_hashes = parts
+                         # Split the file_hashes by comma and strip whitespace for each hash | Used list Comprehension
+                        index_data[filename.strip()] = [hashes.strip() for hashes in file_hashes.split(',')]
 
             return index_data
         except OSError as e:
@@ -92,16 +93,25 @@ class MyGit():
         try:
             # Read current index contents (if exists)
             index_data = self.read_index() or {}
-            # Check if file already exists with the same hash
-            if index_data.get(filename) == file_hash:
-                print(f"File: {filename} already added")
-                return
             
-            # Update or append entry
-            index_data[filename] = file_hash
-            updated_content = "\n".join(f"{f}:{h}" for f, h in index_data.items())
+            # Check if the file already exists in the index
+            if filename in index_data:
+                hash_list = index_data.get(filename)
+                # Check if the latest version is the same as the new file hash
+                if hash_list and hash_list[-1] == file_hash:
+                    print(f"File: {filename} already added in Staging Area")
+                    return
+                else: # if there no file_hash/ new file_hash
+                    # Appending entries
+                    hash_list.append(file_hash)
+                    index_data[filename] = hash_list
+            else:
+                index_data[filename] = [file_hash]
+                    
+            # Updating Content
+            updated_content = "\n".join(f"{f}:{','.join(hashes)}" for f, hashes in index_data.items())
 
-            # Write the updated content
+            # Write the Updated Content in index file
             self.write_file(self.index_file, updated_content)
         except OSError as e:
             raise Exception(f"Error: Could not update index file {self.index_file} - {e}")
@@ -124,11 +134,13 @@ class MyGit():
                 raise Exception(f"Error: Unable to hash file {filename}")
             
             staged_files = self.read_index()
+            hash_list = staged_files.get(filename)
             # Checking if file is already staged or not
-            if staged_files.get(filename) == file_hash:
+            if hash_list and hash_list[-1] == file_hash:
                 print(f"File {filename} is already staged with same content")
                 return
             
+            # Storing/Writing file_content in Objects Folder
             with open(filename, 'rb') as f:
                 content = f.read()
             self.store_file_object(file_hash, content)
@@ -237,7 +249,7 @@ class MyGit():
         except OSError as e:
             raise Exception(f"Error: Could not read commit history - {e}")
 
-    def read_commit_data(self,commit_hash): # Helper function to read commit data
+    def read_commit_data(self, commit_hash): # Helper function to read commit data
         try:
             if not commit_hash:
                 raise ValueError("Error: No commit hash provided")
@@ -256,7 +268,7 @@ class MyGit():
 
                 if line.startswith("parent:"):
                     parent_hash = line.split(":", 1)[1].strip()
-                    commit_data["parent"] = parent_hash if parent_hash != "None" else None # Fix: Stop when reaching the first commit
+                    commit_data["parent"] = parent_hash if parent_hash != "None" else None # Note: Stop when reaching the first commit
                 elif line.startswith("timestamp:"):
                     commit_data["timestamp"] = line.split(":",1)[1].strip()
                 elif line.startswith("message"):
@@ -265,9 +277,15 @@ class MyGit():
                     files_list = True
                     continue
                 elif files_list and ":" in line:
-                        filename, file_hash = line.split(":",1)
-                        commit_data["files"][filename.strip()] = file_hash.strip() 
-            
+                    filename, file_hashes = line.split(":", 1)
+                    # Clean up the hash string: remove whitespace, brackets, and quotes.
+                    cleaned_hashes = file_hashes.strip().strip("[]").replace("'", "")
+                    if ',' in cleaned_hashes:
+                        commit_data['files'][filename.strip()] = [h.strip() for h in cleaned_hashes.split(',')]
+                    else:
+                        commit_data["files"][filename.strip()] = [cleaned_hashes.strip()]
+                
+                            
             return commit_data
         except FileNotFoundError:
             print(f"Waring: Commit file for hash {commit_hash} not found | (Might be first commit)")
@@ -290,8 +308,16 @@ class MyGit():
             except UnicodeDecodeError:
                 return content.decode("utf-16")  # Fallback for UTF-16 files
 
-        except OSError:
-            raise Exception("Error: Failed to get file content") 
+        except OSError as e:
+            raise Exception(f"Error: Failed to get file content for hash {file_hash}: {e}")
+
+    def get_latest_file_hash(self, hash_list):
+        try:
+            if isinstance(hash_list, list):
+                return hash_list[-1] if hash_list else None
+            return hash_list
+        except Exception as e:
+            raise Exception("Error: Unable to get lastest file hash")
 
     def compute_difference(self, content1, content2, filename): # Helper function to compute the difference between two files
         try:
@@ -331,12 +357,19 @@ class MyGit():
             parent_files = parent_commit_content["files"]
 
             diff_output = []
-            diff_output.append(f"These are the files changed in this {commit_hash}:")
+            diff_output.append(f"These are the files changed in this Commit - {commit_hash}:")
 
             # Compare existing files
             for filename in current_files:
-                current_file_hash = current_files[filename]
-                parent_file_hash = parent_files.get(filename)
+                # Taking Latest file_hash from the file hashes
+                current_file_hashes = current_files.get(filename)
+                current_file_hash =  self.get_latest_file_hash(current_file_hashes) if current_file_hashes else None
+                # print(f"Debug: Current_file_hash for {filename} =", current_file_hash)
+                
+                parent_file_hashes = parent_files.get(filename)
+                parent_file_hash = self.get_latest_file_hash(parent_file_hashes) if parent_file_hashes else None
+                # print(f"Debug: Parent_file_hash for {filename} =", parent_file_hash)
+
 
                 if parent_file_hash:  # File exists in both commits
                     parent_file_content = self.get_file_content(parent_file_hash)
@@ -372,6 +405,7 @@ if __name__ == '__main__':
     mygit = MyGit()
     # mygit.init()
     # mygit.add("sample.txt")
-    # mygit.commit("1st commit")
+    # mygit.add("sample2.txt")
+    # mygit.commit("2nd commit")
     # mygit.log()
-    # mygit.diff("Commit_hash")
+    mygit.diff("40590289b509dc0efa85a7b70963a675a8b150be")
