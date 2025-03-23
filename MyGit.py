@@ -408,4 +408,4 @@ if __name__ == '__main__':
     # mygit.add("sample2.txt")
     # mygit.commit("2nd commit")
     # mygit.log()
-    mygit.diff("40590289b509dc0efa85a7b70963a675a8b150be")
+    # mygit.diff("40590289b509dc0efa85a7b70963a675a8b150be")
