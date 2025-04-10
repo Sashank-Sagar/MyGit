@@ -1,24 +1,17 @@
-# TalentScout Hiring Assistant
+# MyGit - A Simple Git Clone
 
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+## Project Overview
 
-##  Project Overview
-
-TalentScout is an AI-powered hiring assistant designed to streamline the candidate screening process. It gathers essential candidate details and uses a large language model (LLM) to generate tailored technical interview questions based on the candidate's declared tech stack.
-
-Built with Python and Streamlit, this application demonstrates the effective use of:
-- Prompt engineering
-- Session-based routing
-- Custom UI navigation
+MyGit is a simplified version control system inspired by Git. Designed as a learning project, it supports core Git features such as repository initialization, staging, committing, viewing logs, and file difference comparison. It is implemented in Python using a modular and class-based architecture.
 
 ---
 
-##  Installation Instructions
+## Installation Instructions
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/Sashank-Sagar/TalentScout-Chatbot.git
-cd TalentScout-Chatbot
+git clone https://github.com/Sashank-Sagar/MyGit.git
+cd MyGit
 ```
 
 ### 2. Create a Virtual Environment
@@ -45,92 +38,71 @@ source env/bin/activate
 pip install -r requirements.txt
 ```
 
-### 5. Run the Application
+### 5. Run the CLI
 ```bash
-streamlit run app.py
+python main.py <command>
 ```
 
 ---
 
-##  Usage Guide
+## Features Implemented
 
-### 🔹 Navigation
-Use the custom sidebar navigation to switch between:
-- **Home**: Project overview and instructions
-- **Candidate Form**: Enter candidate details (name, email, phone, experience, position, location, tech stack)
-- **Interview Questions**: Generate and download tailored questions
+- **init**: Initialize a new MyGit repository
+- **add**: Stage files for commit
+- **commit**: Save a snapshot of the staged files
+- **log**: View the commit history
+- **diff**: Compare working directory changes against the last commit
 
-### 🔹 Candidate Form
-Fill in all required fields. Submitted data is stored in Streamlit's session state for use across pages.
-
-### 🔹 Interview Questions
-The app uses LLM prompts to generate multiple technical questions per selected technology. These are displayed on-screen and can be downloaded.
 
 ---
 
-##  Technical Details
+## Usage Guide
 
-###  Architecture & Code Structure
-```
-TalentScout-Chatbot/
-├── app.py                  # Main script with page routing
-├── helper_functions.py     # Custom sidebar rendering logic
-├── CB_logic.py             # Core chatbot logic for question generation
-├── prompts.py              # Prompt templates
-├── views/                  # Page components
-│   ├── candidate_form.py   # Candidate form input page
-│   └── interview_ques.py   # Technical questions output page
-├── requirements.txt        # Project dependencies
-└── README.md               # Project documentation
+Use the following CLI commands inside the project directory:
+
+```bash
+python main.py init             # Initialize a repo
+python main.py add <filename>  # Add file to staging
+python main.py commit -m "msg" # Commit with message
+python main.py log             # Show commit logs
+python main.py diff            # Show differences
 ```
 
-###  Design Highlights
-- **Session-based Routing**: Replaces Streamlit's default multipage layout with dynamic control using `st.session_state`
-- **Custom Sidebar**: Vertical navigation buttons with `st.rerun()` logic
-- **Prompt Engineering**:
-  - **Candidate Info Prompt**: Extracts relevant, clean information
-  - **Tech Stack Prompt**: Asks for 5 well-formed, difficulty-balanced questions per tech
-- **Input Validation**: Ensures valid and complete inputs (email, phone, etc.)
+---
 
-###  Prompt Strategy
-- Clearly instructs the LLM for concise, skill-relevant questions
-- Balanced difficulty to simulate real interviews
-- One prompt per tech stack element, dynamically iterated
+## Code Structure
+```
+MyGit/
+├── core/
+│   ├── repository.py       # Init and config logic
+│   ├── index.py            # Staging logic
+│   ├── commit.py           # Commit management
+│   └── diff.py             # File diff logic
+├── utils/
+│   └── file_ops.py         # File read/write helpers
+├── main.py                 # CLI handler
+├── requirements.txt        # Dependencies
+└── README.md               # Documentation
+```
 
 ---
 
-##  Challenges & Solutions
+## Development Notes
 
-| Challenge                | Solution                                                                 |
-|--------------------------|--------------------------------------------------------------------------|
-| API Rate Limits          | Added caching using `st.session_state` and simple error handling         |
-| Navigation Jumps         | Resolved using button states and `st.rerun()` logic                      |
-| UI Consistency           | Custom sidebar and minimal layout for clean UX                          |
-| Data Consistency         | Used session memory to keep candidate data across pages                  |
+- **Modular Design**: Each command’s logic is encapsulated in separate classes.
+- **Reusable Helpers**: File operations and path management are handled through utility functions.
+- **No External Database**: All data is stored in a `.mygit` directory within the project.
+- **Educational Purpose**: Focuses on clarity and learning rather than performance or full Git replication.
 
 ---
 
-##  Data Privacy
-- **Simulated Data**: Candidate data is anonymized in the demo
-- **No Storage**: No backend database or persistent logging
-- **GDPR-Friendly**: Designed for privacy-first use
+## Author
+- Sashank Sagar  
+  [GitHub](https://github.com/Sashank-Sagar)  
+  [LinkedIn](https://linkedin.com/in/sashank-sagar)
 
 ---
 
-##  Author
-- **Sashank Sagar**
-  - [GitHub](https://github.com/Sashank-Sagar)
-  - [LinkedIn](https://linkedin.com/in/sashank-sagar)
-
----
-
-##  License
-This project is licensed under the **MIT License**.  
-See the [LICENSE](LICENSE) file for full license details.
-
----
-
-##  Contributions
-If you'd like to contribute, feel free to fork the repo and open a pull request.  
-Suggestions, issues, or feature ideas are welcome in the [Issues](https://github.com/Sashank-Sagar/TalentScout-Chatbot/issues) tab!
+## Contributions
+Feel free to fork the repository, submit pull requests, or open issues to suggest improvements or report bugs.
 
